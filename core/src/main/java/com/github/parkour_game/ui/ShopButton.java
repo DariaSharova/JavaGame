@@ -5,13 +5,13 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 
-public class StartButton {
+public class ShopButton {
     private Texture texture;
     private Rectangle bounds;
 
-    public StartButton() {
-        texture = new Texture("start_button.png");
-        bounds = new Rectangle(Gdx.graphics.getWidth() / 2f - 175, Gdx.graphics.getHeight() / 2f + 100, 350, 170);
+    public ShopButton() {
+        texture = new Texture("shop_button.png");
+        bounds = new Rectangle(Gdx.graphics.getWidth() / 2f - 175, Gdx.graphics.getHeight() / 2f - 100, 350, 170);
     }
 
     public void render(SpriteBatch batch) {
