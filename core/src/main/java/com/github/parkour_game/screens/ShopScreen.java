@@ -17,10 +17,18 @@ public class ShopScreen implements Screen {
     private BitmapFont font;
     private Texture starTexture;
     private Texture backButtonTexture;
+    private Texture frameTexture;
 
     // массив товаров (картинок котов например)
     private Texture[] productTextures;
     private int[] productPrices;
+
+    private Texture selectedFrameTexture;
+    private int selectedItem = -1;
+
+    private String[] outfitNames = {"red", "blue", "green", "purple"};
+    private Texture ownedIconTexture = new Texture("owned_icon.png");
+
 
     public ShopScreen(GameManager gameManager, Main game) {
         this.gameManager = gameManager;
@@ -32,16 +40,19 @@ public class ShopScreen implements Screen {
         font.getData().setScale(4f);
         starTexture = new Texture("star.png");
         backButtonTexture = new Texture("back_button.png");
+        frameTexture = new Texture("frame.png");
+        selectedFrameTexture = new Texture("selected_frame.png");
 
         /// добавить аутфиты
         productTextures = new Texture[] {
-            new Texture("outfit1.png"),
-            new Texture("outfit1.png"),
-            new Texture("outfit1.png")
+            new Texture("red_collar.png"),
+            new Texture("blue_collar.png"),
+            new Texture("green_collar.png"),
+            new Texture("purple_collar.png"),
         };
 
         // цены на товары
-        productPrices = new int[] {0, 50, 100};
+        productPrices = new int[] {0, 50, 100, 150};
     }
 
     @Override
@@ -68,19 +79,30 @@ public class ShopScreen implements Screen {
         float startY = Gdx.graphics.getHeight() / 2f + 50;
         float spacing = 350;
 
-        for (int i = 0; i < productTextures.length; i++) {
-            float x = startX + i * spacing;
-            float y = startY;
+        for (int i = 0; i < outfitNames.length; i++) {
+            float x = startX + (i%3) * spacing;
+            float y = startY - (i/3)*spacing;
+            String outfitName = outfitNames[i];
 
-            // рамка
-            batch.draw(starTexture, x - 20, y - 20, 240, 240); // просто как декоративная рамка
+            // Проверяем, куплен ли аутфит
+            boolean isOwned = gameManager.getOwnedOutfits().contains(outfitName, false);
 
-            // товар
+            // Отрисовка рамки (выделенной если выбрана)
+            if (outfitName.equals(gameManager.getCurrentOutfit())) {
+                batch.draw(selectedFrameTexture, x - 110, y - 105, 410, 410);
+            } else {
+                batch.draw(frameTexture, x - 105, y - 100, 400, 400);
+            }
+
+            // Отрисовка товара
             batch.draw(productTextures[i], x, y, 200, 200);
 
-            // цена
-            String priceText = productPrices[i] + "";
-            font.draw(batch, priceText, x + 50, y - 30);
+            // Если куплено - галочка, иначе - цена
+            if (isOwned) {
+                batch.draw(ownedIconTexture, x + 150, y + 150, 50, 50);
+            } else {
+                font.draw(batch, productPrices[i] + "", x + 50, y - 30);
+            }
         }
 
         batch.end();
@@ -91,21 +113,22 @@ public class ShopScreen implements Screen {
             int touchY = Gdx.graphics.getHeight() - Gdx.input.getY();
 
             // Назад
-            if (touchX >= 50 && touchX <= 250 && touchY >= 50 && touchY <= 130) {
+            if (touchX >= 50 && touchX <= 250 && touchY >= 50 && touchY <= 180) {
                 game.setScreen(game.getMainMenuScreen());
             }
 
             // Проверка нажатия на товары
-            for (int i = 0; i < productTextures.length; i++) {
-                float x = startX + i * spacing;
-                float y = startY;
+            for (int i = 0; i < outfitNames.length; i++) {
+                float x = startX + (i%3) * spacing;
+                float y = startY - (i/3)*spacing;
                 if (touchX >= x && touchX <= x + 200 && touchY >= y && touchY <= y + 200) {
-                    if (gameManager.getTotalStarsCollected() >= productPrices[i]) {
-                        gameManager.setCatOutfit("cat1" + ".png"); // смена скина
-                        gameManager.spendStars(productPrices[i]);
-                        //System.out.println("Куплено: cat1" + ".png");
+                    String outfitName = outfitNames[i];
+                    if (gameManager.getOwnedOutfits().contains(outfitName, false)) {
+                        gameManager.setCurrentOutfit(outfitName);
                     } else {
-                        //System.out.println("Не хватает звёздочек!");
+                        if (gameManager.buyOutfit(outfitName, productPrices[i])) {
+                            gameManager.setCurrentOutfit(outfitName);
+                        }
                     }
                 }
             }
@@ -134,5 +157,6 @@ public class ShopScreen implements Screen {
         for (Texture texture : productTextures) {
             texture.dispose();
         }
+        selectedFrameTexture.dispose();
     }
 }

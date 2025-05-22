@@ -10,6 +10,7 @@ import com.github.parkour_game.GameManager.GameManager;
 import com.github.parkour_game.Main;
 import com.github.parkour_game.ui.StartButton;
 import com.github.parkour_game.ui.ShopButton;
+import com.github.parkour_game.ui.RecordsButton;
 
 public class MainMenuScreen implements Screen {
     private Main game;
@@ -20,6 +21,7 @@ public class MainMenuScreen implements Screen {
     private GameManager gameManager;
     private StartButton startButton;
     private ShopButton shopButton;
+    private RecordsButton recordsButton;
 
     public MainMenuScreen(Main game) {
         this.game = game;
@@ -33,6 +35,7 @@ public class MainMenuScreen implements Screen {
         this.gameManager = game.getGameManager();  // получаем GameManager из Main
         this.startButton = new StartButton();
         this.shopButton = new ShopButton();
+        this.recordsButton = new RecordsButton();
     }
 
     @Override
@@ -46,7 +49,7 @@ public class MainMenuScreen implements Screen {
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
         // Надпись Best Score
-        font.draw(batch, "Best Score: " + gameManager.getBestScore(),
+        font.draw(batch, "Best Score: " + gameManager.getHighScore(),
             Gdx.graphics.getWidth() / 2f - 75, Gdx.graphics.getHeight() - 50);
 
         // Количество звездочек
@@ -58,6 +61,7 @@ public class MainMenuScreen implements Screen {
         // Кнопки
         startButton.render(batch);
         shopButton.render(batch);
+        recordsButton.render(batch);
 
         // Обработка нажатий
         if (Gdx.input.justTouched()) {
@@ -71,6 +75,10 @@ public class MainMenuScreen implements Screen {
 
             if (shopButton.isClicked(touchX, touchY)) {
                 game.setScreen(game.getShopScreen()); // открываем магазин
+            }
+
+            if (recordsButton.isClicked(touchX, touchY)) {
+                game.setScreen(game.getRecordsScreen());
             }
         }
 
@@ -97,5 +105,6 @@ public class MainMenuScreen implements Screen {
         font.dispose();
         startButton.dispose();
         shopButton.dispose();
+        recordsButton.dispose();
     }
 }
