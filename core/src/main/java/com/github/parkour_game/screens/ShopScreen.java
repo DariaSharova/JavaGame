@@ -10,24 +10,23 @@ import com.github.parkour_game.GameManager.GameManager;
 import com.github.parkour_game.Main;
 
 public class ShopScreen implements Screen {
-    private GameManager gameManager;
-    private Main game;
-    private SpriteBatch batch;
-    private Texture background;
-    private BitmapFont font;
-    private Texture starTexture;
-    private Texture backButtonTexture;
-    private Texture frameTexture;
+    private final GameManager gameManager;
+    private final Main game;
+    private final SpriteBatch batch;
+    private final Texture background;
+    private final BitmapFont font;
+    private final Texture starTexture;
+    private final Texture backButtonTexture;
+    private final Texture frameTexture;
 
-    // массив товаров (картинок котов например)
-    private Texture[] productTextures;
-    private int[] productPrices;
+    private final Texture[] productTextures;
+    private final int[] productPrices;
 
-    private Texture selectedFrameTexture;
-    private int selectedItem = -1;
+    private final Texture selectedFrameTexture;
+    private final int selectedItem = -1;
 
-    private String[] outfitNames = {"red", "blue", "green", "purple"};
-    private Texture ownedIconTexture = new Texture("owned_icon.png");
+    private final String[] outfitNames = {"red", "blue", "green", "purple"};
+    private final Texture ownedIconTexture = new Texture("owned_icon.png");
 
 
     public ShopScreen(GameManager gameManager, Main game) {
@@ -113,7 +112,7 @@ public class ShopScreen implements Screen {
             int touchY = Gdx.graphics.getHeight() - Gdx.input.getY();
 
             // Назад
-            if (touchX >= 50 && touchX <= 250 && touchY >= 50 && touchY <= 180) {
+            if (touchX >= 50 && touchX <= 350 && touchY >= 50 && touchY <= 180) {
                 game.setScreen(game.getMainMenuScreen());
             }
 

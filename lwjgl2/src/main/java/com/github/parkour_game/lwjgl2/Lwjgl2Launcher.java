@@ -4,15 +4,17 @@ import com.badlogic.gdx.Files.FileType;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.github.parkour_game.Main;
+import com.github.parkour_game.desktop.DesktopDatabaseHelper;
 
-/** Launches the desktop (LWJGL2) application. */
 public class Lwjgl2Launcher {
     public static void main(String[] args) {
         createApplication();
     }
 
     private static LwjglApplication createApplication() {
-        return new LwjglApplication(new Main(), getDefaultConfiguration());
+        // Создаем заглушку для десктопной версии
+        DesktopDatabaseHelper dbHelper = new DesktopDatabaseHelper();
+        return new LwjglApplication(new Main(dbHelper), getDefaultConfiguration());
     }
 
     private static LwjglApplicationConfiguration getDefaultConfiguration() {
@@ -20,7 +22,6 @@ public class Lwjgl2Launcher {
         configuration.title = "parkour_game";
         configuration.width = 1280;
         configuration.height = 960;
-        //// This prevents a confusing error that would appear after exiting normally.
         configuration.forceExit = false;
 
         for (int size : new int[] { 128, 64, 32, 16 }) {

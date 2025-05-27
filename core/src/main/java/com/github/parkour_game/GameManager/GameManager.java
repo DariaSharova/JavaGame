@@ -1,127 +1,226 @@
 package com.github.parkour_game.GameManager;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
-
 import com.github.parkour_game.entities.Cat;
 import com.github.parkour_game.entities.Platform;
 import com.github.parkour_game.entities.Star;
+import com.github.parkour_game.data.db.DatabaseHelper;
+import com.github.parkour_game.data.db.GameScore;
+
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class GameManager {
-    private static final int MAX_RECENT_SCORES = 5;
-    private static final int MAX_TOP_SCORES = 5;
 
-    private Texture platformTexture;
-    private Texture fragilePlatformTexture;
-    private BitmapFont font;
-    private Preferences preferences;
+    // Графика
+    private final Texture platformTexture;
+    private final Texture fragilePlatformTexture;
+    private final BitmapFont font;
 
-    private Array<Platform> platforms;
+    // Игровые объекты
+    private final Array<Platform> platforms;
+    private final Array<Star> stars;
+    private Cat cat;
+
+    // Состояние игры
     private long lastPlatformTime;
     private long gameStartTime;
     private boolean isCatSpawned;
     private boolean isGameStarted;
     private boolean firstPlatformSpawned;
 
-    private Array<Star> stars;
-    private int starsCollected;
-    private int totalStarsCollected = 0;
-
+    // Прогресс
     private int score;
-    private Array<Integer> lastScores  = new Array<>();
-    private Array<Integer> highScores  = new Array<>();
+    private int starsCollected;
+    private int totalStarsCollected;
 
-    private Array<String> ownedOutfits = new Array<>();
+    // Настройки
+    private final Array<String> ownedOutfits = new Array<>();
     private String currentOutfit = "default";
 
-    private Cat cat;
+    // База данных
+    private final DatabaseHelper dbHelper;
+    private int highScore;
 
-    public GameManager(BitmapFont font) {
+    private List<GameScore> cachedTopScores = new ArrayList<>();
+    private List<GameScore> cachedRecentScores = new ArrayList<>();
+
+    public GameManager(BitmapFont font, DatabaseHelper dbHelper) {
+        if (dbHelper == null) {
+            throw new IllegalArgumentException("DatabaseHelper cannot be null");
+        }
+        this.dbHelper = dbHelper;
         this.font = font;
         this.font.getData().setScale(4f);
-        platformTexture = new Texture("tree1.png");
-        fragilePlatformTexture = new Texture("tree2.png");
-        preferences = Gdx.app.getPreferences("ParkourGamePrefs");
-        totalStarsCollected = preferences.getInteger("totalStarsCollected", 0);
+
+        // Инициализация текстур
+        platformTexture = new Texture(Gdx.files.internal("tree1.png"));
+        fragilePlatformTexture = new Texture(Gdx.files.internal("tree2.png"));
         platforms = new Array<>();
+        stars = new Array<>();
         isGameStarted = false;
 
-        loadScores();
-        totalStarsCollected = preferences.getInteger("totalStarsCollected", 0);
+        // Загрузка данных из БД
+        dbHelper.loadGameData((totalStars, outfit) -> {
+            totalStarsCollected = totalStars;
+            currentOutfit = outfit != null ? outfit : "default";
+            if (outfit != null) {
+                ownedOutfits.addAll(outfit.split(","));
+            } else {
+                ownedOutfits.add("default");
+            }
+        });
 
-        // Загружаем купленные аутфиты
-        String savedOutfits = preferences.getString("ownedOutfits", "default");
-        ownedOutfits.addAll(savedOutfits.split(","));
-        currentOutfit = preferences.getString("currentOutfit", "default");
+        // Загрузка рекорда
+        dbHelper.getTopScores(1, scores -> {
+            if (scores != null && !scores.isEmpty()) {
+                highScore = scores.get(0).getScore();
+            } else {
+                highScore = 0;
+            }
+        });
     }
 
-    private void loadScores() {
-        // Загрузка последних результатов
-        String lastScoresStr = preferences.getString("lastScores", "");
-        if (!lastScoresStr.isEmpty()) {
-            String[] scores = lastScoresStr.split(",");
-            for (String scoreStr : scores) {
-                if (!scoreStr.isEmpty()) {
-                    lastScores.add(Integer.parseInt(scoreStr));
-                }
-            }
-        }
-
-        // Загрузка лучших результатов
-        String highScoresStr = preferences.getString("highScores", "");
-        if (!highScoresStr.isEmpty()) {
-            String[] scores = highScoresStr.split(",");
-            for (String scoreStr : scores) {
-                if (!scoreStr.isEmpty()) {
-                    highScores.add(Integer.parseInt(scoreStr));
-                }
-            }
-        }
+    public void refreshScores(Runnable onComplete) {
+        dbHelper.getTopScores(5, scores -> {
+            cachedTopScores = scores;
+            dbHelper.getRecentScores(5, recent -> {
+                cachedRecentScores = recent;
+                Gdx.app.postRunnable(onComplete);
+            });
+        });
     }
 
-    private void saveScores() {
-        // Сохранение последних результатов
-        StringBuilder lastSb = new StringBuilder();
-        for (int score : lastScores) {
-            lastSb.append(score).append(",");
-        }
-        preferences.putString("lastScores", lastSb.toString());
+    public List<GameScore> getTopScores() {
+        return cachedTopScores;
+    }
 
-        // Сохранение лучших результатов
-        StringBuilder highSb = new StringBuilder();
-        for (int score : highScores) {
-            highSb.append(score).append(",");
-        }
-        preferences.putString("highScores", highSb.toString());
-
-        preferences.flush();
+    public List<GameScore> getRecentScores() {
+        return cachedRecentScores;
     }
 
     public int getHighScore() {
-        return highScores.size > 0 ? highScores.first() : 0;
+        return highScore;
     }
 
-    public int[] getHighScoreList(int count) {
-        count = Math.min(count, highScores.size);
-        int[] scores = new int[count];
-        for (int i = 0; i < count; i++) {
-            scores[i] = highScores.get(i);
-        }
-        return scores;
+    public void startGame() {
+        isGameStarted = true;
+        score = 0;
+        platforms.clear();
+        stars.clear();
+        starsCollected = 0;
+        gameStartTime = TimeUtils.nanoTime();
+        isCatSpawned = false;
+        firstPlatformSpawned = false;
+
+        spawnPlatform();
+        cat = new Cat(Gdx.graphics.getWidth() - 300, 0);
+        cat.setOutfit(currentOutfit);
+        isCatSpawned = true;
     }
 
-    public int[] getLastScoreList(int count) {
-        count = Math.min(count, lastScores.size);
-        int[] scores = new int[count];
-        for (int i = 0; i < count; i++) {
-            scores[i] = lastScores.get(lastScores.size - 1 - i);
+    private void spawnPlatform() {
+        float x = firstPlatformSpawned ? (Math.random() < 0.5 ? 10 : Gdx.graphics.getWidth() - 160) : 10;
+        boolean isFragile = firstPlatformSpawned && Math.random() < 0f;
+
+        Platform platform = new Platform(x, Gdx.graphics.getHeight(), 150, 400, isFragile);
+        platforms.add(platform);
+
+        if (Math.random() < 0.3f) {
+            spawnStarOnPlatform(platform);
         }
-        return scores;
+
+        firstPlatformSpawned = true;
+        lastPlatformTime = TimeUtils.nanoTime();
+    }
+
+    private void spawnStarOnPlatform(Platform platform) {
+        float x = platform.bounds.x < Gdx.graphics.getWidth() / 2f ?
+            platform.bounds.x + platform.bounds.width - 15 :
+            platform.bounds.x - 40;
+        float y = platform.bounds.y + platform.bounds.height / 2f + 10;
+        stars.add(new Star(x, y));
+    }
+
+    public void update(float delta) {
+        if (!isGameStarted) return;
+
+        // Спавн новых платформ
+        if (TimeUtils.nanoTime() - lastPlatformTime > 1_200_000_000L) {
+            spawnPlatform();
+        }
+
+        // Обновление платформ
+        for (int i = platforms.size - 1; i >= 0; i--) {
+            Platform platform = platforms.get(i);
+            platform.bounds.y -= 300 * delta;
+
+            if (platform.bounds.y + platform.bounds.height < 0) {
+                platforms.removeIndex(i);
+                score++;
+            }
+        }
+
+        // Обновление звезд
+        for (int i = stars.size - 1; i >= 0; i--) {
+            Star star = stars.get(i);
+            star.bounds.y -= 300 * delta;
+
+            if (star.bounds.y + star.bounds.height < 0) {
+                stars.removeIndex(i);
+            } else if (cat != null && star.bounds.overlaps(cat.getBounds())) {
+                stars.removeIndex(i);
+                starsCollected++;
+            }
+        }
+
+        // Обновление кота
+        if (isCatSpawned) {
+            cat.update(platforms, delta, this::endGame);
+        }
+    }
+
+    private void endGame() {
+        totalStarsCollected += starsCollected;
+
+        // Сохраняем синхронно
+        new Thread(() -> {
+            dbHelper.saveGameState(score, totalStarsCollected, currentOutfit);
+            Gdx.app.postRunnable(() -> {
+                // Обновляем UI после сохранения
+            });
+        }).start();
+
+        isGameStarted = false;
+    }
+
+    public void render(SpriteBatch batch) {
+        // Отрисовка платформ
+        for (Platform platform : platforms) {
+            Texture texture = platform.isFragile ? fragilePlatformTexture : platformTexture;
+            batch.draw(texture, platform.bounds.x, platform.bounds.y,
+                platform.bounds.width, platform.bounds.height);
+        }
+
+        // Отрисовка звезд
+        for (Star star : stars) {
+            star.render(batch);
+        }
+
+        // Отрисовка кота
+        if (isCatSpawned) {
+            cat.render(batch);
+        }
+
+        // Отрисовка HUD
+        font.draw(batch, "Stars: " + starsCollected, 20, Gdx.graphics.getHeight() - 80);
+        font.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
     }
 
     public boolean buyOutfit(String outfitName, int price) {
@@ -129,11 +228,7 @@ public class GameManager {
             if (totalStarsCollected >= price) {
                 totalStarsCollected -= price;
                 ownedOutfits.add(outfitName);
-
-                // Сохраняем
-                preferences.putString("ownedOutfits", String.join(",", ownedOutfits));
-                preferences.putInteger("totalStarsCollected", totalStarsCollected);
-                preferences.flush();
+                dbHelper.saveGameState(score, totalStarsCollected, String.join(",", ownedOutfits));
                 return true;
             }
         }
@@ -143,17 +238,10 @@ public class GameManager {
     public void setCurrentOutfit(String outfitName) {
         if (ownedOutfits.contains(outfitName, false)) {
             currentOutfit = outfitName;
-            preferences.putString("currentOutfit", outfitName);
-            preferences.flush();
-
-            // Применяем аутфит сразу, если кот существует
-            applyCurrentOutfit();
-        }
-    }
-
-    public void applyCurrentOutfit() {
-        if (cat != null) {
-            cat.setOutfit(currentOutfit);
+            dbHelper.saveGameState(score, totalStarsCollected, currentOutfit);
+            if (cat != null) {
+                cat.setOutfit(currentOutfit);
+            }
         }
     }
 
@@ -165,159 +253,27 @@ public class GameManager {
         return currentOutfit;
     }
 
-
-    public void startGame() {
-        isGameStarted = true;
-        score = 0;
-        platforms.clear();
-        cat = null;
-        gameStartTime = TimeUtils.nanoTime();
-        isCatSpawned = false;
-        firstPlatformSpawned = false;
-        stars = new Array<>();
-        starsCollected = 0;
-        spawnPlatform();
-
-        cat = new Cat(Gdx.graphics.getWidth() - 300, 0);
-        applyCurrentOutfit(); // Применяем текущий аутфит при создании кота
-        isCatSpawned = true;
-    }
-
-    private void spawnStarOnPlatform(Platform platform) {
-        float x;
-        if (platform.bounds.x < Gdx.graphics.getWidth() / 2f) {
-            // Платформа слева — звезда справа от платформы
-            x = platform.bounds.x + platform.bounds.width - 15;
-        } else {
-            // Платформа справа — звезда слева от платформы
-            x = platform.bounds.x - 40;
-        }
-        float y = platform.bounds.y + platform.bounds.height / 2f + 10;
-        stars.add(new Star(x, y));
-    }
-
-    private void spawnPlatform() {
-        float x = firstPlatformSpawned ? (Math.random() < 0.5 ? 10 : Gdx.graphics.getWidth() - 160) : 10;
-        boolean isFragile = firstPlatformSpawned && Math.random() < 0f; // 20% шанс на ломкую
-
-        Platform platform = new Platform(x, Gdx.graphics.getHeight(), 150, 400, isFragile);
-        if (Math.random() < 0.2) {
-            spawnStarOnPlatform(platform);
-        }
-        platforms.add(platform);
-
-        if (isFragile) {
-            // Создаем маленькую обычную платформу напротив
-            float oppositeX = (x < Gdx.graphics.getWidth() / 2f) ? Gdx.graphics.getWidth() - 160 : 10;
-            Platform smallSafePlatform = new Platform(oppositeX, Gdx.graphics.getHeight() + 100, 100, 200, false);
-            platforms.add(smallSafePlatform);
-        }
-
-        firstPlatformSpawned = true;
-        lastPlatformTime = TimeUtils.nanoTime();
-    }
-
-
-
-    public void update(float delta) {
-
-
-        if (TimeUtils.nanoTime() - lastPlatformTime > 1200000000) {
-            spawnPlatform();
-        }
-
-        for (int i = 0; i < platforms.size; i++) {
-            Platform platform = platforms.get(i);
-            platform.bounds.y -= 300 * delta;
-            if (platform.bounds.y + platform.bounds.height < 0) {
-                platforms.removeIndex(i);
-                score++;
-            }
-        }
-
-        for (int i = 0; i < stars.size; i++) {
-            Star star = stars.get(i);
-            star.bounds.y -= 300 * delta;
-
-            if (star.bounds.y + star.bounds.height < 0) {
-                stars.removeIndex(i);
-                i--;
-            } else if (cat != null && star.bounds.overlaps(cat.getBounds())) {
-                stars.removeIndex(i);
-                starsCollected++;
-                i--;
-            }
-        }
-
-        if (isCatSpawned) {
-            cat.update(platforms, delta, this::endGame);
-        }
-    }
-
-    private void endGame() {
-        lastScores.add(score);
-        if (lastScores.size > MAX_RECENT_SCORES) {
-            lastScores.removeIndex(0);
-        }
-
-        // Обновляем топовые результаты
-        boolean scoreAdded = false;
-        for (int i = 0; i < highScores.size; i++) {
-            if (score > highScores.get(i)) {
-                highScores.insert(i, score);
-                scoreAdded = true;
-                break;
-            }
-        }
-        if (!scoreAdded && highScores.size < MAX_TOP_SCORES) {
-            highScores.add(score);
-        }
-        if (highScores.size > MAX_TOP_SCORES) {
-            highScores.removeIndex(highScores.size - 1);
-        }
-
-        // Сохраняем результаты
-        saveScores();
-
-        totalStarsCollected += starsCollected;
-        preferences.putInteger("totalStarsCollected", totalStarsCollected);
-        preferences.flush();
-        isGameStarted = false;
-    }
-
-
-    public void render(SpriteBatch batch) {
-        for (Platform platform : platforms) {
-            Texture textureToDraw = platform.isFragile ? fragilePlatformTexture : platformTexture;
-            batch.draw(textureToDraw, platform.bounds.x, platform.bounds.y,
-                platform.bounds.width, platform.bounds.height);
-        }
-
-        for (Star star : stars) {
-            star.render(batch);
-        }
-
-        if (isCatSpawned) {
-            cat.render(batch); // Вся отрисовка кота теперь в его классе
-        }
-
-        font.draw(batch, "Stars: " + starsCollected, 20, Gdx.graphics.getHeight() - 80);
-        font.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
+    public int getTotalStarsCollected() {
+        return totalStarsCollected;
     }
 
     public boolean isGameStarted() {
         return isGameStarted;
     }
 
-    public int getTotalStarsCollected() {
-        return totalStarsCollected;
-    }
-
     public void dispose() {
+        platformTexture.dispose();
+        fragilePlatformTexture.dispose();
+        if (cat != null) {
+            cat.dispose();
+        }
         for (Star star : stars) {
             star.dispose();
         }
-        platformTexture.dispose();
-        if (cat != null) cat.dispose();
+        dbHelper.close();
+    }
+
+    public DatabaseHelper getDbHelper() {
+        return dbHelper;
     }
 }

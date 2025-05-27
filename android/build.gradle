@@ -39,8 +39,8 @@ android {
     multiDexEnabled true
   }
   compileOptions {
-    sourceCompatibility "8"
-    targetCompatibility "8"
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
     coreLibraryDesugaringEnabled true
   }
   buildTypes {
@@ -73,6 +73,10 @@ dependencies {
   natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
   natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"
 
+  // Room (основные компоненты)
+  implementation "androidx.room:room-runtime:2.6.1"  // Базовая библиотека
+  annotationProcessor "androidx.room:room-compiler:2.6.1"  // Обработка аннотаций для Java
+  implementation 'androidx.room:room-ktx:2.6.1'
 }
 
 // Called every time gradle gets executed, takes the native dependencies of

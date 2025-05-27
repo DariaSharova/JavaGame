@@ -8,7 +8,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
 public class Cat {
-    private Rectangle bounds;
+    private final Rectangle bounds;
     private boolean isFlipped;
 
     // Текстуры для разных состояний по умолчанию
@@ -30,16 +30,16 @@ public class Cat {
     // Анимация прыжка
     private boolean isJumping;
     private float jumpProgress; // от 0 до 1
-    private float jumpDuration = 0.3f; // время прыжка (сек)
+    private final float jumpDuration = 0.3f; // время прыжка (сек)
     private Vector2 startPos; // начальная позиция
-    private Vector2 endPos;   // конечная позиция
+    private final Vector2 endPos;   // конечная позиция
     private boolean isOnPlatform; // Флаг, находится ли кот на платформе
 
     private boolean isRunningToStart; // Новое состояние - бежит к старту
-    private float runSpeed = 170f; // Скорость бега
+    private final float runSpeed = 170f; // Скорость бега
     private boolean isSitting = false; // Флаг состояния "сидит"
     private boolean isLying = true;
-    private float sitAndLieDuration = 2f; // Время сидения перед бегом (в секундах)
+    private final float sitAndLieDuration = 2f; // Время сидения перед бегом (в секундах)
     private float sitTimer = 0f;
 
     public Cat(float startX, float startY) {
@@ -105,17 +105,6 @@ public class Cat {
         }
     }
 
-    public void setTexture(String texturePath) {
-        Texture newTexture = new Texture(texturePath);
-        if (isJumping) {
-            currentJumpTexture .dispose();
-            currentJumpTexture  = newTexture;
-        } else {
-            currentTexture .dispose();
-            currentTexture  = newTexture;
-        }
-    }
-
     public void update(Array<Platform> platforms, float delta, Runnable onDeath) {
         if (isLying) {
             sitTimer += delta;
@@ -156,7 +145,7 @@ public class Cat {
         if (isJumping) {
             jumpProgress += delta / jumpDuration;
 
-            // Линейная интерполяция (Lerp) между startPos и endPos
+            // Линейная интерполяция между startPos и endPos
             bounds.x = startPos.x + (endPos.x - startPos.x) * jumpProgress;
             bounds.y = startPos.y + (endPos.y - startPos.y) * jumpProgress;
 

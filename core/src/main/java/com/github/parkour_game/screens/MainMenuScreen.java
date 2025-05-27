@@ -13,15 +13,15 @@ import com.github.parkour_game.ui.ShopButton;
 import com.github.parkour_game.ui.RecordsButton;
 
 public class MainMenuScreen implements Screen {
-    private Main game;
-    private SpriteBatch batch;
-    private Texture background;
-    private Texture starTexture;
-    private BitmapFont font;
-    private GameManager gameManager;
-    private StartButton startButton;
-    private ShopButton shopButton;
-    private RecordsButton recordsButton;
+    private final Main game;
+    private final SpriteBatch batch;
+    private final Texture background;
+    private final Texture starTexture;
+    private final BitmapFont font;
+    private final GameManager gameManager;
+    private final StartButton startButton;
+    private final ShopButton shopButton;
+    private final RecordsButton recordsButton;
 
     public MainMenuScreen(Main game) {
         this.game = game;
@@ -54,7 +54,7 @@ public class MainMenuScreen implements Screen {
 
         // Количество звездочек
         String starsText = "" + gameManager.getTotalStarsCollected();
-        font.draw(batch, starsText, 40, Gdx.graphics.getHeight() - 50);
+        font.draw(batch, starsText, 30, Gdx.graphics.getHeight() - 50);
         float textWidth = font.getRegion().getRegionWidth() * starsText.length() * 0.2f;
         batch.draw(starTexture, textWidth, Gdx.graphics.getHeight() - 110, 80, 80);
 

@@ -6,7 +6,7 @@ import com.badlogic.gdx.math.Rectangle;
 
 public class Star {
     public Rectangle bounds;
-    private Texture texture;
+    private final Texture texture;
 
     public Star(float x, float y) {
         texture = new Texture("star.png");

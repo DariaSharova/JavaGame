@@ -10,6 +10,8 @@ import com.github.parkour_game.screens.ShopScreen;
 import com.github.parkour_game.screens.RecordsScreen;
 import com.badlogic.gdx.Game;
 
+import com.github.parkour_game.data.db.DatabaseHelper;
+
 public class Main extends Game {
     private GameManager gameManager;
     private MainMenuScreen mainMenuScreen;
@@ -17,6 +19,11 @@ public class Main extends Game {
     private GameScreen gameScreen;
     private RecordsScreen recordsScreen;
 
+    private final DatabaseHelper dbHelper;
+
+    public Main(DatabaseHelper dbHelper) {
+        this.dbHelper = dbHelper;
+    }
 
     public GameManager getGameManager() {
         return gameManager;
@@ -38,48 +45,31 @@ public class Main extends Game {
 
     @Override
     public void create() {
-        // Инициализация менеджера игры с новым шрифтом
-        gameManager = new GameManager(new BitmapFont());
+        // 1. Инициализация GameManager с передачей DatabaseHelper
+        gameManager = new GameManager(new BitmapFont(), dbHelper);
 
-        // Создание экранов
+        // 2. Создание экранов
         mainMenuScreen = new MainMenuScreen(this);
         shopScreen = new ShopScreen(gameManager, this);
         gameScreen = new GameScreen(gameManager, this);
         recordsScreen = new RecordsScreen(this);
 
-        // Установка начального экрана
+        // 3. Установка начального экрана
         setScreen(mainMenuScreen);
     }
 
     @Override
     public void dispose() {
-        super.dispose(); // Важно вызывать dispose родительского класса
+        super.dispose();
 
-        // Освобождаем экраны в порядке, обратном их созданию
-        if (recordsScreen != null) {
-            recordsScreen.dispose();
-            recordsScreen = null;
-        }
+        // Освобождаем экраны
+        if (recordsScreen != null) recordsScreen.dispose();
+        if (gameScreen != null) gameScreen.dispose();
+        if (shopScreen != null) shopScreen.dispose();
+        if (mainMenuScreen != null) mainMenuScreen.dispose();
 
-        if (gameScreen != null) {
-            gameScreen.dispose();
-            gameScreen = null;
-        }
-
-        if (shopScreen != null) {
-            shopScreen.dispose();
-            shopScreen = null;
-        }
-
-        if (mainMenuScreen != null) {
-            mainMenuScreen.dispose();
-            mainMenuScreen = null;
-        }
-
-        // В последнюю очередь освобождаем GameManager
-        if (gameManager != null) {
-            gameManager.dispose();
-            gameManager = null;
-        }
+        // Освобождаем GameManager и DatabaseHelper
+        if (gameManager != null) gameManager.dispose();
+        if (dbHelper != null) dbHelper.close();
     }
 }

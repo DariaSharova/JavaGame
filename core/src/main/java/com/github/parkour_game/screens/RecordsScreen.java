@@ -8,17 +8,29 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.github.parkour_game.Main;
 import com.github.parkour_game.GameManager.GameManager;
+import com.github.parkour_game.data.db.GameScore;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RecordsScreen implements Screen {
-    private Main game;
-    private SpriteBatch batch;
-    private Texture background;
-    private BitmapFont font;
-    private GameManager gameManager;
-    private Texture backButtonTexture;
-    private Texture recordsTitle;
-    private Texture bestScoresTitle;
-    private Texture recentScoresTitle;
+    private final Main game;
+    private final SpriteBatch batch;
+    private final Texture background;
+    private final BitmapFont font;
+    private final GameManager gameManager;
+    private final Texture backButtonTexture;
+    private final Texture recordsTitle;
+    private final Texture bestScoresTitle;
+    private final Texture recentScoresTitle;
+
+
+    private List<GameScore> topScores = new ArrayList<>();
+    private List<GameScore> recentScores = new ArrayList<>();
+    private boolean scoresLoaded = false;
+
+
+
 
     public RecordsScreen(Main game) {
         this.game = game;
@@ -31,6 +43,41 @@ public class RecordsScreen implements Screen {
         this.recordsTitle = new Texture("records_button.png");
         this.bestScoresTitle = new Texture("best_scores_title.png");
         this.recentScoresTitle = new Texture("recent_scores_title.png");
+
+        loadScores();
+    }
+
+    @Override
+    public void show() {
+        refreshScores();
+    }
+
+    private void refreshScores() {
+        scoresLoaded = false;
+        gameManager.refreshScores(() -> scoresLoaded = true);
+    }
+
+    private void loadScores() {
+        // Загрузка топовых результатов
+        gameManager.getDbHelper().getTopScores(5, scores -> {
+            topScores = scores;
+            checkScoresLoaded();
+        });
+
+        // Загрузка последних результатов
+        gameManager.getDbHelper().getRecentScores(5, scores -> {
+            recentScores = scores;
+            checkScoresLoaded();
+        });
+    }
+
+    private void checkScoresLoaded() {
+        scoresLoaded = !topScores.isEmpty() && !recentScores.isEmpty();
+        if (scoresLoaded) {
+            Gdx.app.postRunnable(() -> {
+                // Обновляем UI в основном потоке
+            });
+        }
     }
 
     @Override
@@ -79,22 +126,26 @@ public class RecordsScreen implements Screen {
     }
 
     private void drawScores() {
-        // Получаем результаты из GameManager
-        int[] highScores = gameManager.getHighScoreList(5);
-        int[] lastScores = gameManager.getLastScoreList(5);
+        if (!scoresLoaded) {
+            font.draw(batch, "Loading...", Gdx.graphics.getWidth()/2f - 100,
+                Gdx.graphics.getHeight()/2f);
+            return;
+        }
 
         // Отрисовка лучших результатов
-        for (int i = 0; i < highScores.length; i++) {
-            font.draw(batch, (i+1) + ". " + highScores[i],
+        List<GameScore> topScores = gameManager.getTopScores();
+        for (int i = 0; i < topScores.size(); i++) {
+            font.draw(batch, (i+1) + ". " + topScores.get(i).getScore(),
                 Gdx.graphics.getWidth()/4f - 120,
-                Gdx.graphics.getHeight() - 350 - i*100);
+                Gdx.graphics.getHeight() - 450 - i*80);
         }
 
         // Отрисовка последних результатов
-        for (int i = 0; i < lastScores.length; i++) {
-            font.draw(batch, (i+1) + ". " + lastScores[i],
+        List<GameScore> recentScores = gameManager.getRecentScores();
+        for (int i = 0; i < recentScores.size(); i++) {
+            font.draw(batch, (i+1) + ". " + recentScores.get(i).getScore(),
                 3*Gdx.graphics.getWidth()/4f - 100,
-                Gdx.graphics.getHeight() - 350 - i*100);
+                Gdx.graphics.getHeight() - 450 - i*80);
         }
     }
 
@@ -109,7 +160,7 @@ public class RecordsScreen implements Screen {
         recentScoresTitle.dispose();
     }
 
-    @Override public void show() {}
+    //@Override public void show() {}
     @Override public void resize(int width, int height) {}
     @Override public void pause() {}
     @Override public void resume() {}
