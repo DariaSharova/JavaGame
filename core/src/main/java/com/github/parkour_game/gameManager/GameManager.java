@@ -1,4 +1,4 @@
-package com.github.parkour_game.GameManager;
+package com.github.parkour_game.gameManager;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
@@ -218,7 +218,7 @@ public class GameManager {
             cat.render(batch);
         }
 
-        // Отрисовка HUD
+        // Отрисовка
         font.draw(batch, "Stars: " + starsCollected, 20, Gdx.graphics.getHeight() - 80);
         font.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
     }

@@ -1,15 +1,15 @@
 package com.github.parkour_game.screens;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.github.parkour_game.GameManager.GameManager;
+import com.github.parkour_game.gameManager.GameManager;
 import com.github.parkour_game.Main;
 
-public class ShopScreen implements Screen {
+public class ShopScreen extends ScreenAdapter {
     private final GameManager gameManager;
     private final Main game;
     private final SpriteBatch batch;
@@ -28,7 +28,6 @@ public class ShopScreen implements Screen {
     private final String[] outfitNames = {"red", "blue", "green", "purple"};
     private final Texture ownedIconTexture = new Texture("owned_icon.png");
 
-
     public ShopScreen(GameManager gameManager, Main game) {
         this.gameManager = gameManager;
         this.game = game;
@@ -42,7 +41,6 @@ public class ShopScreen implements Screen {
         frameTexture = new Texture("frame.png");
         selectedFrameTexture = new Texture("selected_frame.png");
 
-        /// добавить аутфиты
         productTextures = new Texture[] {
             new Texture("red_collar.png"),
             new Texture("blue_collar.png"),
@@ -50,12 +48,8 @@ public class ShopScreen implements Screen {
             new Texture("purple_collar.png"),
         };
 
-        // цены на товары
         productPrices = new int[] {0, 50, 100, 150};
     }
-
-    @Override
-    public void show() {}
 
     @Override
     public void render(float delta) {
@@ -86,7 +80,7 @@ public class ShopScreen implements Screen {
             // Проверяем, куплен ли аутфит
             boolean isOwned = gameManager.getOwnedOutfits().contains(outfitName, false);
 
-            // Отрисовка рамки (выделенной если выбрана)
+            // Отрисовка рамки
             if (outfitName.equals(gameManager.getCurrentOutfit())) {
                 batch.draw(selectedFrameTexture, x - 110, y - 105, 410, 410);
             } else {
@@ -135,18 +129,6 @@ public class ShopScreen implements Screen {
     }
 
     @Override
-    public void resize(int width, int height) {}
-
-    @Override
-    public void pause() {}
-
-    @Override
-    public void resume() {}
-
-    @Override
-    public void hide() {}
-
-    @Override
     public void dispose() {
         batch.dispose();
         background.dispose();
@@ -156,6 +138,8 @@ public class ShopScreen implements Screen {
         for (Texture texture : productTextures) {
             texture.dispose();
         }
+        frameTexture.dispose();
         selectedFrameTexture.dispose();
+        ownedIconTexture.dispose();
     }
 }

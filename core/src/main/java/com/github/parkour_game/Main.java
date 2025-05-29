@@ -2,7 +2,7 @@ package com.github.parkour_game;
 
 
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.github.parkour_game.GameManager.GameManager;
+import com.github.parkour_game.gameManager.GameManager;
 import com.github.parkour_game.screens.GameScreen;
 import com.github.parkour_game.screens.MainMenuScreen;
 

@@ -1,19 +1,19 @@
 package com.github.parkour_game.screens;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.github.parkour_game.Main;
-import com.github.parkour_game.GameManager.GameManager;
+import com.github.parkour_game.gameManager.GameManager;
 import com.github.parkour_game.data.db.GameScore;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class RecordsScreen implements Screen {
+public class RecordsScreen extends ScreenAdapter {
     private final Main game;
     private final SpriteBatch batch;
     private final Texture background;
@@ -24,13 +24,9 @@ public class RecordsScreen implements Screen {
     private final Texture bestScoresTitle;
     private final Texture recentScoresTitle;
 
-
     private List<GameScore> topScores = new ArrayList<>();
     private List<GameScore> recentScores = new ArrayList<>();
     private boolean scoresLoaded = false;
-
-
-
 
     public RecordsScreen(Main game) {
         this.game = game;
@@ -39,7 +35,7 @@ public class RecordsScreen implements Screen {
         this.font = new BitmapFont();
         font.getData().setScale(5f);
         this.gameManager = game.getGameManager();
-        backButtonTexture = new Texture("back_button.png");
+        this.backButtonTexture = new Texture("back_button.png");
         this.recordsTitle = new Texture("records_button.png");
         this.bestScoresTitle = new Texture("best_scores_title.png");
         this.recentScoresTitle = new Texture("recent_scores_title.png");
@@ -58,13 +54,11 @@ public class RecordsScreen implements Screen {
     }
 
     private void loadScores() {
-        // Загрузка топовых результатов
         gameManager.getDbHelper().getTopScores(5, scores -> {
             topScores = scores;
             checkScoresLoaded();
         });
 
-        // Загрузка последних результатов
         gameManager.getDbHelper().getRecentScores(5, scores -> {
             recentScores = scores;
             checkScoresLoaded();
@@ -159,10 +153,4 @@ public class RecordsScreen implements Screen {
         bestScoresTitle.dispose();
         recentScoresTitle.dispose();
     }
-
-    //@Override public void show() {}
-    @Override public void resize(int width, int height) {}
-    @Override public void pause() {}
-    @Override public void resume() {}
-    @Override public void hide() {}
 }

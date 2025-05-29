@@ -1,18 +1,18 @@
 package com.github.parkour_game.screens;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.github.parkour_game.GameManager.GameManager;
+import com.github.parkour_game.gameManager.GameManager;
 import com.github.parkour_game.Main;
 import com.github.parkour_game.ui.StartButton;
 import com.github.parkour_game.ui.ShopButton;
 import com.github.parkour_game.ui.RecordsButton;
 
-public class MainMenuScreen implements Screen {
+public class MainMenuScreen extends ScreenAdapter {
     private final Main game;
     private final SpriteBatch batch;
     private final Texture background;
@@ -32,14 +32,11 @@ public class MainMenuScreen implements Screen {
         this.font = new BitmapFont();
         font.getData().setScale(4f);
 
-        this.gameManager = game.getGameManager();  // получаем GameManager из Main
+        this.gameManager = game.getGameManager();
         this.startButton = new StartButton();
         this.shopButton = new ShopButton();
         this.recordsButton = new RecordsButton();
     }
-
-    @Override
-    public void show() {}
 
     @Override
     public void render(float delta) {
@@ -70,11 +67,10 @@ public class MainMenuScreen implements Screen {
 
             if (startButton.isClicked(touchX, touchY)) {
                 game.setScreen(game.getGameScreen());
-
             }
 
             if (shopButton.isClicked(touchX, touchY)) {
-                game.setScreen(game.getShopScreen()); // открываем магазин
+                game.setScreen(game.getShopScreen());
             }
 
             if (recordsButton.isClicked(touchX, touchY)) {
@@ -84,18 +80,6 @@ public class MainMenuScreen implements Screen {
 
         batch.end();
     }
-
-    @Override
-    public void resize(int width, int height) {}
-
-    @Override
-    public void pause() {}
-
-    @Override
-    public void resume() {}
-
-    @Override
-    public void hide() {}
 
     @Override
     public void dispose() {
